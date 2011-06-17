@@ -1,0 +1,150 @@
+<?php
+/**
+ * @file
+ * A custom field formatter to display Vimeo Videos.
+ */
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function vimeo_embed_field_formatter_info() {
+  return array(
+    'vimeo_embed_default' => array(
+      'label' => t('Vimeo Embed Default'),
+      'field types' => array('text'),
+    ),
+    'vimeo_embed_custom' => array(
+      'label' => t('Vimeo Embed Custom'),
+      'field types' => array('text'),
+      // Include/define custom default settings here
+      'settings' => array('video_width' => 600, 'video_height' => 400),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function vimeo_embed_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  $settings = $display['settings'];
+
+  switch ($display['type']) {
+    case 'vimeo_embed_default':
+      // Common case: each value is displayed individually in a sub-element
+      // keyed by delta. The field.tpl.php template specifies the markup
+      // wrapping each value.
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array('#markup' => $item['value']);
+      }
+      break;
+
+    case 'vimeo_embed_custom':
+      // More elaborate formatters can defer to a theme function for easier
+      // customization.
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array(
+          '#theme' => 'embed_video',
+          '#data' => $item['value'],
+          '#video_width' => $settings['video_width'],
+          '#video_height' => $settings['video_height'],
+        );
+      }
+      break;
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function vimeo_embed_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $element = array();
+
+  if ($display['type'] == 'vimeo_embed_custom') {
+    $element['video_width'] = array(
+      '#title' => t('Width'),
+      '#type' => 'textfield',
+      '#size' => 10,
+      '#default_value' => $settings['video_width'],
+      '#element_validate' => array('_element_validate_integer_positive'),
+      '#required' => TRUE,
+      '#attributes' => array('inline'),
+    );
+    $element['video_height'] = array(
+      '#title' => t('Height'),
+      '#type' => 'textfield',
+      '#size' => 10,
+      '#default_value' => $settings['video_height'],
+      '#element_validate' => array('_element_validate_integer_positive'),
+      '#required' => TRUE,
+      '#attributes' => array('class' => array('inline')),
+    );
+  }
+
+  return $element;
+
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function vimeo_embed_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = '';
+
+  if ($display['type'] == 'vimeo_embed_custom') {
+    $summary = t('Embed Dimensions: @width x @height ', array('@width' => $settings['video_width'], '@height' => $settings['video_height']));
+  }
+
+  return $summary;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function vimeo_embed_theme($existing, $type, $theme, $path) {
+  return array(
+    'embed_video' => array(
+      'variables' => array('data' => NULL, 'video_width' => NULL, 'video_height' => NULL),
+    ),
+  );
+}
+
+function theme_embed_video($element) {
+  dsm($element);
+  
+  // desired output:
+  // <iframe src="http://player.vimeo.com/video/25240787?title=0&amp;byline=0&amp;portrait=0" width="400" height="300" frameborder="0"></iframe>
+  
+  $output = "";
+  
+  $output .= "<iframe src='http://player.vimeo.com/video/";
+  $output .= $element['data'];
+  $output .= "?title=0&amp;byline=0&amp;portrait=0'";
+  $output .= " width='" . $element['video_width'] . "'";
+  $output .= " height='" . $element['video_height'] . "'";
+  $output .= " frameborder='0'></iframe>";
+  
+  return $output;
+}
+
+function vimeo_embed_preprocess_embed_video(&$element) {
+  // ref: http://vimeo.com/api/docs/simple-api#video
+  
+  // json version
+  // $url = "http://vimeo.com/api/v2/video/" . $element['data'] . ".json";
+  // $result = json_decode(@file_get_contents($url));
+
+  // php version
+  $url = "http://vimeo.com/api/v2/video/" . $element['data'] . ".php";
+  $result = unserialize(file_get_contents($url));
+
+  $element['vimeo'] = $result[0];
+}
