@@ -36,7 +36,7 @@ function vimeo_embed_field_widget_info() {
     'vimeo_id' => array(
       'label' => t('Video ID'),
       'field types' => array('vimeoid'),
-      'settings' => array('size' => 60),
+      'settings' => array('max_length' => 60),
     ),
   );
 }
@@ -56,11 +56,9 @@ function vimeo_embed_field_widget_form(&$form, &$form_state, $field, $instance, 
   $element['vimeoinfo'] = array(
     '#type' => 'hidden',
     '#delta' => $delta,
-    '#vimeoid' => isset($items[$delta]['vimeoid']) ? $items[$delta]['vimeoid'] : '',
     '#default_value' => isset($items[$delta]['vimeoinfo']) ? $items[$delta]['vimeoinfo'] : '',
     '#element_validate' => array('vimeo_embed_getinfo'),
   );
-  dsm($element);
   
   return $element;
 }
@@ -82,10 +80,11 @@ function vimeo_embed_field_validate($entity_type, $entity, $field, $instance, $l
 }
 
 function vimeo_embed_getinfo($element, &$form_state) {
-  $delta = $element['#delta'];
-  $vidId = $element['#vimeoid'];
   $lang = isset($form_state['values']['language']) ? $form_state['values']['language'] : '' ;
-  
+  $delta = $element['#delta'];
+
+  $vidId = $form_state['values'][$element['#parents'][0]][$lang][$delta]['vimeoid'];
+
   if ($lang && $vidId) {
     $url = "http://vimeo.com/api/v2/video/" . $vidId . ".php";
     $result = file_get_contents($url);
