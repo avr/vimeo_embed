@@ -83,12 +83,13 @@ function vimeo_embed_getinfo($element, &$form_state) {
   $lang = isset($form_state['values']['language']) ? $form_state['values']['language'] : '' ;
   $delta = $element['#delta'];
 
-  $vidId = $form_state['values'][$element['#parents'][0]][$lang][$delta]['vimeoid'];
-
-  if ($lang && $vidId) {
-    $url = "http://vimeo.com/api/v2/video/" . $vidId . ".php";
-    $result = file_get_contents($url);
-    form_set_value($element, $result, $form_state);
+  if ($lang) {
+    $vidId = $form_state['values'][$element['#parents'][0]][$lang][$delta]['vimeoid'];
+    if ($vidId) {
+      $url = "http://vimeo.com/api/v2/video/" . $vidId . ".php";
+      $result = file_get_contents($url);
+      form_set_value($element, $result, $form_state);
+    }
   }
 }
 
