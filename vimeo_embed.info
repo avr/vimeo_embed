@@ -1,28 +1,9 @@
-name = Vimeo Embed
+name = "Vimeo Embed"
 description = "Formatter for Text Fields to embed Vimeo Videos"
+package = "Other"
 
 ; Core version (required)
 core = 7.x
 
-; Package name (see http://drupal.org/node/542202 for a list of names)
-; package = 
-
-; PHP version requirement (optional)
-; php = 5.2
-
 ; Loadable code files
 files[] = vimeo_embed.module
-; files[] = vimeo_embed.admin.inc
-; files[] = vimeo_embed.class.inc
-
-; Module dependencies
-; dependencies[] = mymodule
-; dependencies[] = theirmodule (1.2)
-; dependencies[] = anothermodule (>=2.4)
-; dependencies[] = views (3.x)
-
-; Configuration page
-; configure = admin/config/vimeo_embed
-
-; For further information about configuration options, see
-; - http://drupal.org/node/542202
