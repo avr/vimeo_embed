@@ -233,3 +233,121 @@ function theme_embed_video($element) {
   
   return $output;
 }
+
+/**
+ * Implements hook_filter_info().
+ */
+function vimeo_embed_filter_info() {
+  $filters = array();
+  $filters['vimeo_embed'] = array(
+    'title' => t('Vimeo Embed'),
+    'description' => t('Substitutes [video_thumb:URL caption:"TEXT"] with a thumbnail and caption.'),
+    'settings callback' => '_vimeo_embed_filter_settings',
+    'default settings' => array(
+      'video_player_width' => '400',
+      'video_player_height' => '400',
+    ),
+    'process callback' => '_vimeo_embed_filter_process',
+    // 'tips callback' => '_vimeo_embed_filter_tips',
+    'weight' => -1, // See http://drupal.org/node/1061244
+  );
+  return $filters;
+}
+
+function _vimeo_embed_filter_settings($form, &$form_state, $filter, $format, $defaults, $filters) {
+
+  $settings['video_player_width'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default width setting'),
+    '#default_value' => isset($filter->settings['video_player_width']) ? $filter->settings['video_player_width'] : $defaults['video_player_width'],
+    '#maxlength' => 4,
+  );
+  $settings['video_player_height'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default height setting'),
+    '#default_value' => isset($filter->settings['video_player_height']) ? $filter->settings['video_player_height'] : $defaults['video_player_height'],
+    '#maxlength' => 4,
+  );
+
+  return $settings;
+}
+
+
+function _vimeo_embed_filter_process($text, $filter, $format, $langcode, $cache, $cache_id) {
+  if (preg_match_all('/\[video_thumb(\:(.+))?( .+)?\]/isU', $text, $matches_code)) {
+    foreach ($matches_code[0] as $ci => $code) {
+      $video = array(
+        'source' => trim($matches_code[2][$ci]),
+      );
+
+      if ($matches_code[3][$ci] && preg_match_all("/\s+([a-zA-Z_]+)\:(\s)?'([0-9a-zA-Z_\/\/\.:\s]+)(?=')/i", $matches_code[3][$ci], $matches_attributes)) {
+        foreach ($matches_attributes[0] AS $ai => $attribute) {
+          $video[$matches_attributes[1][$ai]] = $matches_attributes[3][$ai];
+        }
+      }
+      
+      $caption = isset($video['caption']) ? "<br />" . $video['caption'] : NULL;
+
+      $replacement = "<span style='margin:0 20px 20px 0; display:block; float:left; width:100px;'>";
+
+      if ($video['source'] == 'placeholder') {
+        
+        $img = isset($video['img']) ? "<img src='" . $video['img'] . "' width='100' />" : "<img src='/sites/all/themes/midam/images/placeholder.png' width='100' />";
+        
+        $linkOpts = array(
+          'html' => true,
+        );
+        
+        $replacement .= $img . $caption;
+        
+      }
+      else {
+        $videoID = explode('.com/', $video['source']);
+        $video['id'] = $videoID[1];
+
+
+        // Sets video width & height after any user input has been parsed.
+        // First, check if user has set a width.
+        if (isset($video['width']) && !isset($video['height'])) {
+          $video['height'] = $filter->settings['video_player_height'];
+        }
+        // Else, if user has set height.
+        elseif (isset($video['height']) && !isset($video['width'])) {
+          $video['width'] = $video['height'] * $ratio;
+        }
+        // Maybe both?
+        elseif (isset($video['height']) && isset($video['width'])) {
+          $video['width'] = $video['width'];
+          $video['height'] = $video['height'];
+        }
+        // Fall back to defaults.
+        else {
+          $video['width'] = $filter->settings['video_player_width'] != '' ? $filter->settings['video_player_width'] : 400;
+          $video['height'] = $filter->settings['video_player_height'] != '' ? $filter->settings['video_player_height'] : 400;
+        }
+
+        $img = isset($video['img']) ? "<img src='" . $video['img'] . "' width='100' />" : "<img src='/sites/all/themes/midam/images/placeholder.png' width='100' />";
+
+
+        $linkOpts = array(
+          'attributes' => array(
+            'class' => array('colorbox-load'),
+            'rel' => 'videos',
+          ),
+          'html' => true,
+          'query' => array(
+            'width' => $video['width'],
+            'height' => $video['height'],
+            'iframe' => 'true',
+          ),
+        );
+        $replacement .= l($img . $caption, "http://player.vimeo.com/video/" . $video['id'], $linkOpts);
+      }
+      $replacement .= "</span>";
+      
+      $text = str_replace($code, $replacement, $text);
+    }
+  }
+  
+  return $text;
+}
