@@ -280,7 +280,7 @@ function _vimeo_embed_filter_process($text, $filter, $format, $langcode, $cache,
         'source' => trim($matches_code[2][$ci]),
       );
 
-      if ($matches_code[3][$ci] && preg_match_all("/\s+([a-zA-Z_]+)\:(\s)?'([0-9a-zA-Z_\/\/\.:\s]+)(?=')/i", $matches_code[3][$ci], $matches_attributes)) {
+      if ($matches_code[3][$ci] && preg_match_all("/\s+([a-zA-Z_]+)\:(\s)?'([0-9a-zA-Z-_\/\/\.:\s]+)(?=')/i", $matches_code[3][$ci], $matches_attributes)) {
         foreach ($matches_attributes[0] AS $ai => $attribute) {
           $video[$matches_attributes[1][$ai]] = $matches_attributes[3][$ai];
         }
@@ -291,13 +291,12 @@ function _vimeo_embed_filter_process($text, $filter, $format, $langcode, $cache,
       $replacement = "<span style='margin:0 20px 20px 0; display:block; float:left; width:100px;'>";
 
       if ($video['source'] == 'placeholder') {
-        
         $img = isset($video['img']) ? "<img src='" . $video['img'] . "' width='100' />" : "<img src='/sites/all/themes/midam/images/placeholder.png' width='100' />";
         
         $linkOpts = array(
           'html' => true,
         );
-        
+
         $replacement .= $img . $caption;
         
       }
@@ -331,17 +330,18 @@ function _vimeo_embed_filter_process($text, $filter, $format, $langcode, $cache,
 
         $linkOpts = array(
           'attributes' => array(
-            'class' => array('colorbox-load'),
+            // 'class' => array('colorbox-load'),
             'rel' => 'videos',
+            'target' => "_blank",
           ),
           'html' => true,
-          'query' => array(
-            'width' => $video['width'],
-            'height' => $video['height'],
-            'iframe' => 'true',
-          ),
+          // 'query' => array(
+          //   'width' => $video['width'],
+          //   'height' => $video['height'],
+          //   'iframe' => 'true',
+          // ),
         );
-        $replacement .= l($img . $caption, "http://player.vimeo.com/video/" . $video['id'], $linkOpts);
+        $replacement .= l($img . $caption, "https://player.vimeo.com/video/" . $video['id'], $linkOpts);
       }
       $replacement .= "</span>";
       
